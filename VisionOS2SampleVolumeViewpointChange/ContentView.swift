@@ -10,7 +10,6 @@ import RealityKit
 
 struct ContentView: View {
 
-    @State var drummerEntity: Entity?
     @State var drummerRotation: Rotation3D = .identity
     
     var body: some View {
@@ -31,17 +30,16 @@ struct ContentView: View {
                 }
             }
             RealityView { content in
-                if let entity = try? await Entity(named: "toy_drummer_idle") {
-                    entity.scale*=3.5
-                    entity.position.x+=0.025
-                    entity.position.y-=0.2
-                    entity.position.z-=0.3
-                    let count = entity.availableAnimations.count
+                if let drummerEntity = try? await Entity(named: "toy_drummer_idle") {
+                    drummerEntity.scale*=3.5
+                    drummerEntity.position.x+=0.025
+                    drummerEntity.position.y-=0.2
+                    drummerEntity.position.z-=0.3
+                    let count = drummerEntity.availableAnimations.count
                         if count > 0 {
-                            entity.playAnimation(entity.availableAnimations[count - 1].repeat())
+                            drummerEntity.playAnimation(drummerEntity.availableAnimations[count - 1].repeat())
                     }
-                    drummerEntity = entity
-                    content.add(drummerEntity!)
+                    content.add(drummerEntity)
                 }
             }
         }.onVolumeViewpointChange{ _, newValue in
