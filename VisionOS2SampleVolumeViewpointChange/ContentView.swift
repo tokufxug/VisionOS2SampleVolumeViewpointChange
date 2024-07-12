@@ -7,42 +7,53 @@
 
 import SwiftUI
 import RealityKit
-import RealityKitContent
 
 struct ContentView: View {
 
-    @State var enlarge = false
-
+    @State var drummerEntity: Entity?
+    @State var drummerRotation: Rotation3D = .identity
+    
     var body: some View {
         VStack {
+            Model3D(named: "toy_drummer_idle") {phase in
+                 if let model = phase.model {
+                     model
+                         .resizable()
+                         .aspectRatio(contentMode: .fit)
+                 } else if phase.error != nil {
+                     VStack {
+                         Image(systemName: "x.circle.fill")
+                             .font(.extraLargeTitle2)
+                         Text("Failed to load model.")
+                     }
+                 } else {
+                     ProgressView()
+                }
+            }
             RealityView { content in
-                // Add the initial RealityKit content
-                if let scene = try? await Entity(named: "Scene", in: realityKitContentBundle) {
-                    content.add(scene)
-                }
-            } update: { content in
-                // Update the RealityKit content when SwiftUI state changes
-                if let scene = content.entities.first {
-                    let uniformScale: Float = enlarge ? 1.4 : 1.0
-                    scene.transform.scale = [uniformScale, uniformScale, uniformScale]
+                if let entity = try? await Entity(named: "toy_drummer_idle") {
+                    entity.scale*=3.5
+                    entity.position.x+=0.025
+                    entity.position.y-=0.2
+                    entity.position.z-=0.3
+                    let count = entity.availableAnimations.count
+                        if count > 0 {
+                            entity.playAnimation(entity.availableAnimations[count - 1].repeat())
+                    }
+                    drummerEntity = entity
+                    content.add(drummerEntity!)
                 }
             }
-            .gesture(TapGesture().targetedToAnyEntity().onEnded { _ in
-                enlarge.toggle()
-            })
-
-            VStack {
-                Button {
-                    enlarge.toggle()
-                } label: {
-                    Text(enlarge ? "Reduce RealityView Content" : "Enlarge RealityView Content")
-                }
-                .animation(.none, value: 0)
-                .fontWeight(.semibold)
-            }
-            .padding()
-            .glassBackgroundEffect()
+        }.onVolumeViewpointChange{ _, newValue in
+            drummerRotation = Rotation3D.slerp(
+                from: drummerRotation,
+                to: newValue.squareAzimuth.orientation,
+                t: 1.0,
+                along: .shortest
+            )
         }
+        .rotation3DEffect(drummerRotation)
+        .animation(.easeInOut, value: drummerRotation)
     }
 }
 
